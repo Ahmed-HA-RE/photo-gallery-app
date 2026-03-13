@@ -1,13 +1,26 @@
 import { FaHeart } from 'react-icons/fa';
 import { ClipLoader } from 'react-spinners';
-
-import { useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import AlertMessage from './alert-message';
 import useFetchPhotos from '../hooks/useFetchPhotos';
+import { reducer } from '../reducers/toggle-favorites';
 
 const PhotoGallery = () => {
+  const initialFavorites = JSON.parse(
+    localStorage.getItem('favorites') || '[]',
+  );
+
   const [search, setSearch] = useState('');
   const { photos, isLoading, error } = useFetchPhotos();
+  const [state, dispatch] = useReducer(reducer, {
+    favorites: initialFavorites,
+  });
+
+  // Save favorite photos to local storage
+  useEffect(
+    () => localStorage.setItem('favorites', JSON.stringify(state.favorites)),
+    [state.favorites],
+  );
 
   const filterPhotos = photos.filter((photo) => {
     return photo.author.toLowerCase().includes(search.toLowerCase());
@@ -24,7 +37,7 @@ const PhotoGallery = () => {
 
   return (
     <div className='space-y-10'>
-      <div className='flex flex-col lg:flex-row items-center justify-between gap-8'>
+      <div className='flex flex-col lg:flex-row lg:items-center  justify-between gap-6'>
         <h1 className='text-4xl md:text-5xl font-bold'>Photo Gallery</h1>
         {/* Search filter  */}
         <input
@@ -51,9 +64,20 @@ const PhotoGallery = () => {
               }}
             >
               {/* Favorite Icon */}
-              <div className='absolute top-2 right-2 rounded-full cursor-pointer p-2 bg-white/80'>
-                <FaHeart />
-              </div>
+              <button
+                className='absolute top-2 right-2 rounded-full cursor-pointer p-2 bg-white/80'
+                onClick={() =>
+                  dispatch({ type: 'TOGGLE_FAVORITES', payload: photo.id })
+                }
+              >
+                <FaHeart
+                  className={
+                    state.favorites.includes(photo.id)
+                      ? 'text-red-500'
+                      : 'text-black'
+                  }
+                />
+              </button>
 
               <div className='absolute inset-x-0 bottom-0 p-4 bg-black/15 backdrop-blur-md'>
                 <p className='text-white text-base font-medium'>

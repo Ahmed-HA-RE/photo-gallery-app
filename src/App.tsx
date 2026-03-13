@@ -5,7 +5,6 @@ const App = () => {
     <main className='p-4 pt-10'>
       <section>
         <div className='max-w-7xl mx-auto'>
-          {/* Photo Gallery */}
           <PhotoGallery />
         </div>
       </section>
