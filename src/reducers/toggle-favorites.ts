@@ -1,11 +1,4 @@
-type State = {
-  favorites: string[];
-};
-
-type Action = {
-  type: 'TOGGLE_FAVORITES';
-  payload: string;
-};
+import type { Action, State } from '../types/toggle-favorite';
 
 export const reducer = (state: State, action: Action) => {
   switch (action.type) {
@@ -26,6 +19,12 @@ export const reducer = (state: State, action: Action) => {
           favorites: [...state.favorites, action.payload],
         };
       }
+    }
+    case 'CLEAR_FAVORITES': {
+      return {
+        ...state,
+        favorites: [],
+      };
     }
     default:
       return state;

@@ -1,9 +1,9 @@
-import { FaHeart } from 'react-icons/fa';
 import { ClipLoader } from 'react-spinners';
-import { useEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import AlertMessage from './alert-message';
 import useFetchPhotos from '../hooks/useFetchPhotos';
 import { reducer } from '../reducers/toggle-favorites';
+import PhotoCard from './photo-card';
 
 const PhotoGallery = () => {
   const initialFavorites = JSON.parse(
@@ -22,9 +22,17 @@ const PhotoGallery = () => {
     [state.favorites],
   );
 
-  const filterPhotos = photos.filter((photo) => {
-    return photo.author.toLowerCase().includes(search.toLowerCase());
-  });
+  // Use memo hook to optimize filtering
+  const filterPhotos = useMemo(() => {
+    return photos.filter((photo) => {
+      return photo.author.toLowerCase().includes(search.toLowerCase());
+    });
+  }, [photos, search]);
+
+  // Use callback to handle search input changes
+  const handleSearch = useCallback((value: string) => {
+    setSearch(value);
+  }, []);
 
   // Loading state
   if (isLoading) {
@@ -37,15 +45,26 @@ const PhotoGallery = () => {
 
   return (
     <div className='space-y-10'>
-      <div className='flex flex-col lg:flex-row lg:items-center  justify-between gap-6'>
+      <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-6'>
         <h1 className='text-4xl md:text-5xl font-bold'>Photo Gallery</h1>
-        {/* Search filter  */}
-        <input
-          className='text-sm w-full max-w-md bg-white rounded-full placeholder:text-black/70 text-black px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300'
-          placeholder='Search photos...'
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+
+        <div className='w-full lg:w-auto flex flex-col sm:flex-row sm:items-center gap-3'>
+          {/* Search filter  */}
+          <input
+            className='text-sm w-full sm:w-80 bg-white rounded-full placeholder:text-black/70 text-black px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300'
+            placeholder='Search photos...'
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+
+          <button
+            className='bg-red-500 text-white rounded-full px-5 py-2.5 hover:bg-red-600 transition-colors duration-300 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'
+            onClick={() => dispatch({ type: 'CLEAR_FAVORITES' })}
+            disabled={state.favorites.length === 0}
+          >
+            Clear Favorites
+          </button>
+        </div>
       </div>
 
       {filterPhotos.length === 0 ? (
@@ -56,35 +75,12 @@ const PhotoGallery = () => {
       ) : (
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
           {filterPhotos.map((photo) => (
-            <div
+            <PhotoCard
               key={photo.id}
-              className='bg-white rounded-lg shadow-md overflow-hidden bg-cover bg-center bg-no-repeat relative aspect-square hover:scale-105 transition-transform duration-300'
-              style={{
-                backgroundImage: `url(${photo.download_url})`,
-              }}
-            >
-              {/* Favorite Icon */}
-              <button
-                className='absolute top-2 right-2 rounded-full cursor-pointer p-2 bg-white/80'
-                onClick={() =>
-                  dispatch({ type: 'TOGGLE_FAVORITES', payload: photo.id })
-                }
-              >
-                <FaHeart
-                  className={
-                    state.favorites.includes(photo.id)
-                      ? 'text-red-500'
-                      : 'text-black'
-                  }
-                />
-              </button>
-
-              <div className='absolute inset-x-0 bottom-0 p-4 bg-black/15 backdrop-blur-md'>
-                <p className='text-white text-base font-medium'>
-                  {photo.author}
-                </p>
-              </div>
-            </div>
+              photo={photo}
+              isFavorite={state.favorites.includes(photo.id)}
+              dispatch={dispatch}
+            />
           ))}
         </div>
       )}
